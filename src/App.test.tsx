@@ -1,7 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
+
+afterEach(() => {
+  window.history.pushState(null, "", "/");
+});
 
 describe("App", () => {
   it("renders the keys table with comments, tags, and icon refresh actions", () => {
@@ -21,10 +25,23 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Tags" }));
 
+    const tagFilters = screen.getByRole("region", { name: "Tag filters" });
+    expect(within(tagFilters).getByRole("button", { name: "prod 2 keys" })).toBeInTheDocument();
+    expect(within(tagFilters).getByRole("button", { name: "routing 1 key" })).toBeInTheDocument();
+
     const tagPanel = screen.getByRole("region", { name: "Tag prod" });
     expect(within(tagPanel).getByText("2 keys")).toBeInTheDocument();
     expect(within(tagPanel).getByText("Only use for organization metadata refresh.")).toBeInTheDocument();
     expect(within(tagPanel).getByRole("button", { name: "Refresh tag metadata" })).toBeInTheDocument();
+  });
+
+  it("opens the Tags page from the hash URL", () => {
+    window.history.pushState(null, "", "#tags");
+
+    render(<App />);
+
+    expect(screen.getByRole("region", { name: "Tag filters" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tag prod" })).toBeInTheDocument();
   });
 
   it("documents client-only and provider limitations on About", async () => {

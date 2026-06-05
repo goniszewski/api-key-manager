@@ -365,40 +365,57 @@ h1 {
 }
 
 .tag-layout {
-  display: grid;
-  grid-template-columns: 160px 1fr;
+  display: block;
 }
 
-.tag-sidebar {
-  border-right: 1px solid var(--line);
+.tag-chip-bar {
+  border-bottom: 1px solid var(--line);
   background: #fbfcfe;
-  padding: 14px 10px;
+  padding: 14px 16px;
 }
 
-.tag-sidebar h2 {
+.tag-chip-bar h2 {
   margin: 0 0 10px;
   color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.tag-sidebar button {
-  width: 100%;
-  min-height: 34px;
+.tag-chip-list {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip-list button {
+  min-height: 34px;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  border: 0;
-  border-radius: 6px;
-  padding: 0 8px;
+  gap: 7px;
+  border: 1px solid #dbe1ea;
+  border-radius: 999px;
+  padding: 0 8px 0 10px;
   color: #5f6b7a;
-  background: transparent;
+  background: #fff;
   font-weight: 700;
 }
 
-.tag-sidebar button.active {
+.tag-chip-list button.active {
+  border-color: #c9dcff;
   color: #125ec4;
   background: #eaf2ff;
+}
+
+.tag-chip-list button b {
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #125ec4;
+  background: #d8e7ff;
+  font-size: 12px;
 }
 
 .tag-detail {
@@ -485,7 +502,6 @@ h1 {
   }
 
   .form-grid,
-  .tag-layout,
   .metric-grid,
   .provider-grid {
     grid-template-columns: 1fr;
@@ -500,9 +516,4 @@ h1 {
     display: none;
   }
 
-  .tag-sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
 }
-

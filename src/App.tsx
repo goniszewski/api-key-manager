@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { KeyRound, Lock, Plus, RefreshCw, ShieldCheck, Tag, Unlock } from "lucide-react";
 import { detectProvider } from "./domain/providerDetection";
 import { createKeyRecord, mergeMetadataResult } from "./domain/keyRecords";
@@ -102,7 +102,7 @@ const providerLabels: Record<ProviderId, string> = {
 };
 
 export default function App() {
-  const [view, setView] = useState<View>("keys");
+  const [view, setView] = useState<View>(() => viewFromHash());
   const [records, setRecords] = useState<ApiKeyRecord[]>(seedRecords);
   const [selectedTag, setSelectedTag] = useState("prod");
   const [showAddKey, setShowAddKey] = useState(false);
@@ -114,6 +114,18 @@ export default function App() {
   const detection = detectProvider(form.key);
   const tagGroups = useMemo(() => groupKeysByTag(records), [records]);
   const activeTag = tagGroups.find((group) => group.tag === selectedTag) ?? tagGroups[0] ?? null;
+
+  useEffect(() => {
+    const handleHashChange = () => setView(viewFromHash());
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  function navigate(nextView: View) {
+    setView(nextView);
+    window.history.replaceState(null, "", `#${nextView}`);
+  }
 
   async function handleLoadVault() {
     try {
@@ -173,7 +185,7 @@ export default function App() {
     setRecords((current) => [record, ...current]);
     setForm(initialForm);
     setShowAddKey(false);
-    setView("keys");
+    navigate("keys");
   }
 
   async function refreshKey(record: ApiKeyRecord) {
@@ -211,7 +223,7 @@ export default function App() {
               key={item}
               className={view === item ? "active" : ""}
               type="button"
-              onClick={() => setView(item)}
+              onClick={() => navigate(item)}
             >
               {titleCase(item)}
             </button>
@@ -399,20 +411,24 @@ function TagsView(props: {
 
   return (
     <main className="panel tag-layout">
-      <aside className="tag-sidebar">
+      <section className="tag-chip-bar" aria-label="Tag filters">
         <h2>All tags</h2>
-        {props.groups.map((group) => (
-          <button
-            key={group.tag}
-            className={props.selectedTag === group.tag ? "active" : ""}
-            type="button"
-            onClick={() => props.onSelectTag(group.tag)}
-          >
-            <span>{group.tag}</span>
-            <b>{group.count}</b>
-          </button>
-        ))}
-      </aside>
+        <div className="tag-chip-list">
+          {props.groups.map((group) => (
+            <button
+              key={group.tag}
+              aria-label={`${group.tag} ${group.count} ${group.count === 1 ? "key" : "keys"}`}
+              className={props.selectedTag === group.tag ? "active" : ""}
+              type="button"
+              onClick={() => props.onSelectTag(group.tag)}
+            >
+              <Tag size={14} aria-hidden="true" />
+              <span>{group.tag}</span>
+              <b>{group.count}</b>
+            </button>
+          ))}
+        </div>
+      </section>
       <section className="tag-detail" aria-label={`Tag ${props.activeTag.tag}`}>
         <div className="tag-heading">
           <div>
@@ -578,3 +594,12 @@ function titleCase(value: string): string {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
+function viewFromHash(): View {
+  const hash = window.location.hash.replace("#", "");
+
+  if (hash === "tags" || hash === "providers" || hash === "about") {
+    return hash;
+  }
+
+  return "keys";
+}
