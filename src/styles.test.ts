@@ -20,3 +20,13 @@ describe("tag chip density", () => {
     expect(styles).toContain("height: 18px;");
   });
 });
+
+describe("summary metric alignment", () => {
+  it("baseline-aligns metric values and labels", () => {
+    expect(styles).toContain("display: inline-grid;");
+    expect(styles).toContain("align-content: center;");
+    expect(styles).toContain("align-items: baseline;");
+    expect(styles).toContain(".summary-item strong,\n.summary-item span");
+    expect(styles).toContain("line-height: 1;");
+  });
+});

@@ -498,8 +498,10 @@ h1 {
 
 .summary-item {
   min-height: 38px;
-  display: inline-flex;
-  align-items: center;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-content: center;
+  align-items: baseline;
   gap: 8px;
   border: 1px solid #dbe1ea;
   border-radius: 999px;
@@ -520,7 +522,16 @@ h1 {
   font-size: 14px;
 }
 
-.summary-item span,
+.summary-item strong,
+.summary-item span {
+  line-height: 1;
+}
+
+.summary-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .provider-card span,
 .provider-card p {
   color: var(--muted);
