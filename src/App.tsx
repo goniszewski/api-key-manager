@@ -32,66 +32,6 @@ const initialForm: AddKeyForm = {
   comment: "",
 };
 
-const now = "2026-06-05T12:00:00.000Z";
-
-const seedRecords: ApiKeyRecord[] = [
-  {
-    ...createKeyRecord({
-      label: "OpenRouter production",
-      key: "sk-or-v1-seed-openrouter-secret",
-      tags: ["prod", "routing"],
-      comment: "Used by public app fallback chain.",
-      now,
-    }),
-    id: "seed-openrouter",
-    metadata: { balanceLabel: "$48.20 left", usageLabel: "$31.00 this month", limitLabel: "$100.00 limit" },
-    lastCheckedAt: "2026-06-05T11:58:00.000Z",
-    lastRefreshStatus: "ok",
-  },
-  {
-    ...createKeyRecord({
-      label: "DeepSeek batch",
-      key: "sk-deepseek-seed-secret",
-      providerOverride: "deepseek",
-      tags: ["batch", "watch"],
-      comment: "Low balance; top up before monthly export.",
-      now,
-    }),
-    id: "seed-deepseek",
-    provider: "deepseek",
-    metadata: { balanceLabel: "$6.31" },
-    lastCheckedAt: "2026-06-05T11:56:00.000Z",
-    lastRefreshStatus: "ok",
-  },
-  {
-    ...createKeyRecord({
-      label: "OpenAI admin",
-      key: "sk-proj-seed-openai-secret",
-      providerOverride: "openai",
-      tags: ["admin", "prod"],
-      comment: "Only use for organization metadata refresh.",
-      now,
-    }),
-    id: "seed-openai",
-    lastCheckedAt: "2026-06-05T11:00:00.000Z",
-    lastRefreshStatus: "limited",
-    lastRefreshError: "OpenAI metadata generally requires Admin API access.",
-  },
-  {
-    ...createKeyRecord({
-      label: "Gemini lab",
-      key: "AIzaSySeedGeminiKey",
-      providerOverride: "gemini",
-      tags: ["lab"],
-      comment: "Billing checked in AI Studio manually.",
-      now,
-    }),
-    id: "seed-gemini",
-    lastRefreshStatus: "manual",
-    lastRefreshError: "Gemini billing must be checked in AI Studio.",
-  },
-];
-
 const providerLabels: Record<ProviderId, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
@@ -112,13 +52,13 @@ const providerDomains: Record<ProviderId, string> = {
 
 export default function App() {
   const [view, setView] = useState<View>(() => viewFromHash());
-  const [records, setRecords] = useState<ApiKeyRecord[]>(seedRecords);
+  const [records, setRecords] = useState<ApiKeyRecord[]>([]);
   const [selectedTag, setSelectedTag] = useState("prod");
   const [showAddKey, setShowAddKey] = useState(false);
   const [form, setForm] = useState<AddKeyForm>(initialForm);
   const [passphrase, setPassphrase] = useState("");
   const [vaultEnvelope, setVaultEnvelope] = useState<VaultEnvelope | null>(null);
-  const [vaultMessage, setVaultMessage] = useState("Demo data is loaded. Create a passphrase to save an encrypted vault.");
+  const [vaultMessage, setVaultMessage] = useState("Create a passphrase to save an encrypted vault in this browser.");
 
   const detection = detectProvider(form.key);
   const tagGroups = useMemo(() => groupKeysByTag(records), [records]);
@@ -400,7 +340,14 @@ function KeysView(props: {
         </form>
       )}
 
-      <KeyTable records={props.records} onRefreshKey={props.onRefreshKey} />
+      {props.records.length > 0 ? (
+        <KeyTable records={props.records} onRefreshKey={props.onRefreshKey} />
+      ) : (
+        <section className="empty-state">
+          <h2>No keys yet.</h2>
+          <p>Add your first API key to start tracking provider metadata, tags, and notes.</p>
+        </section>
+      )}
     </main>
   );
 }

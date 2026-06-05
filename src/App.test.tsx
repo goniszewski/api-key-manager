@@ -8,21 +8,32 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("renders the keys table with comments, tags, and icon refresh actions", () => {
+  it("starts with an empty vault instead of demo data", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "API Key Manager" })).toBeInTheDocument();
-    expect(screen.getByText("OpenRouter production")).toBeInTheDocument();
-    expect(screen.getByText("Used by public app fallback chain.")).toBeInTheDocument();
-    expect(screen.getAllByText("prod").length).toBeGreaterThan(0);
+    expect(screen.getByText("No keys yet.")).toBeInTheDocument();
+    expect(screen.getByText("Create a passphrase to save an encrypted vault in this browser.")).toBeInTheDocument();
+    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh metadata" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Refresh OpenRouter production" })).toBeInTheDocument();
   });
 
   it("groups keys on the Tags page and keeps comments visible", async () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await addKey(user, {
+      label: "OpenRouter production",
+      key: "sk-or-v1-test-openrouter-secret",
+      tags: "Prod, Routing",
+      comment: "Used by public app fallback chain.",
+    });
+    await addKey(user, {
+      label: "OpenAI admin",
+      key: "sk-proj-test-openai-secret",
+      tags: "Admin, Prod",
+      comment: "Only use for organization metadata refresh.",
+    });
     await user.click(screen.getByRole("button", { name: "Tags" }));
 
     const tagFilters = screen.getByRole("region", { name: "Tag filters" });
@@ -42,14 +53,25 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("region", { name: "Tag filters" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Tag prod" })).toBeInTheDocument();
+    expect(screen.getByText("No tags yet.")).toBeInTheDocument();
   });
 
   it("renders provider cards with favicons and compact metadata", async () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await addKey(user, {
+      label: "OpenAI admin",
+      key: "sk-proj-test-openai-secret",
+      tags: "Admin",
+      comment: "Only use for organization metadata refresh.",
+    });
+    await addKey(user, {
+      label: "OpenRouter production",
+      key: "sk-or-v1-test-openrouter-secret",
+      tags: "Prod",
+      comment: "Used by public app fallback chain.",
+    });
     await user.click(screen.getByRole("button", { name: "Providers" }));
 
     const openAi = screen.getByRole("region", { name: "OpenAI provider summary" });
@@ -66,7 +88,8 @@ describe("App", () => {
       "src",
       expect.stringContaining("domain=openrouter.ai"),
     );
-    expect(within(openRouter).getByText("$48.20 left")).toHaveClass("provider-signal");
+    expect(within(openRouter).getByText("1 key")).toBeInTheDocument();
+    expect(within(openRouter).getByText("Manual")).toHaveClass("provider-signal");
   });
 
   it("documents client-only and provider limitations on About", async () => {
@@ -101,3 +124,24 @@ describe("App", () => {
     expect(screen.getByText("Used for smoke tests")).toBeInTheDocument();
   });
 });
+
+async function addKey(
+  user: ReturnType<typeof userEvent.setup>,
+  key: {
+    label: string;
+    key: string;
+    tags: string;
+    comment: string;
+  },
+) {
+  await user.click(screen.getByRole("button", { name: "Add key" }));
+  await user.clear(screen.getByLabelText("Label"));
+  await user.type(screen.getByLabelText("Label"), key.label);
+  await user.clear(screen.getByLabelText("API key"));
+  await user.type(screen.getByLabelText("API key"), key.key);
+  await user.clear(screen.getByLabelText("Tags"));
+  await user.type(screen.getByLabelText("Tags"), key.tags);
+  await user.clear(screen.getByLabelText("Comment"));
+  await user.type(screen.getByLabelText("Comment"), key.comment);
+  await user.click(screen.getByRole("button", { name: "Save encrypted" }));
+}
