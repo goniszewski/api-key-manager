@@ -9,3 +9,14 @@ describe("responsive table density", () => {
     expect(styles).toContain("@media (max-width: 640px)");
   });
 });
+
+describe("tag chip density", () => {
+  it("uses compact pills for tag filters", () => {
+    expect(styles).toContain("gap: 6px;");
+    expect(styles).toContain("min-height: 26px;");
+    expect(styles).toContain("padding: 0 6px;");
+    expect(styles).toContain("width: 12px;");
+    expect(styles).toContain("min-width: 18px;");
+    expect(styles).toContain("height: 18px;");
+  });
+});
