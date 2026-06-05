@@ -265,6 +265,62 @@ h1 {
   margin-top: 12px;
 }
 
+.demo-showcase {
+  margin: 16px;
+  border: 1px dashed #cfd8e3;
+  border-radius: 7px;
+  background: #fbfcfe;
+  overflow: hidden;
+}
+
+.showcase-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 0;
+}
+
+.showcase-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.showcase-heading h2,
+.showcase-heading p {
+  margin: 0;
+}
+
+.showcase-heading h2 {
+  font-size: 16px;
+}
+
+.showcase-heading p:not(.eyebrow) {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 760;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.link-button:hover {
+  color: #0b5bd3;
+}
+
+.demo-showcase .key-table {
+  margin: 12px 0 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
 .key-table {
   margin: 16px;
   border: 1px solid #dbe1ea;
@@ -285,6 +341,30 @@ h1 {
 
 .key-row > span {
   min-width: 0;
+}
+
+.demo-row {
+  opacity: .58;
+  background: #fcfdff;
+}
+
+.key-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.demo-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #eef2f7;
+  color: #53606f;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 760;
+  text-transform: uppercase;
 }
 
 .key-table.compact .key-row {
@@ -340,6 +420,11 @@ h1 {
   margin-top: 3px;
   color: #697586;
   font-size: 11px;
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: .52;
 }
 
 .status,
@@ -691,6 +776,11 @@ h1 {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .showcase-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .key-table:not(.compact) .key-row {

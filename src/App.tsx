@@ -24,6 +24,8 @@ type VaultPayload = {
   keys: ApiKeyRecord[];
 };
 
+const SHOWCASE_DISMISSED_KEY = "api-key-manager-showcase-dismissed";
+
 const initialForm: AddKeyForm = {
   label: "",
   key: "",
@@ -50,10 +52,71 @@ const providerDomains: Record<ProviderId, string> = {
   unknown: "",
 };
 
+const demoRecords: ApiKeyRecord[] = [
+  {
+    id: "demo-openrouter",
+    label: "OpenRouter production",
+    provider: "openrouter",
+    providerDetection: {
+      provider: "openrouter",
+      confidence: "high",
+      reason: "OpenRouter keys commonly start with sk-or-v1-.",
+    },
+    maskedKey: "sk-or-v1...cret",
+    tags: ["prod", "routing"],
+    comment: "Used by public app fallback chain.",
+    metadata: { balanceLabel: "$48.20 left", usageLabel: "$31.00 this month", limitLabel: "$100.00 limit" },
+    lastCheckedAt: "2026-06-05T11:58:00.000Z",
+    lastRefreshStatus: "ok",
+    lastRefreshError: null,
+    createdAt: "2026-06-05T11:58:00.000Z",
+    updatedAt: "2026-06-05T11:58:00.000Z",
+  },
+  {
+    id: "demo-deepseek",
+    label: "DeepSeek batch",
+    provider: "deepseek",
+    providerDetection: {
+      provider: "deepseek",
+      confidence: "medium",
+      reason: "DeepSeek keys usually use an sk- prefix and can be confirmed by provider selection.",
+    },
+    maskedKey: "sk-dee...cret",
+    tags: ["batch", "watch"],
+    comment: "Low balance; top up before monthly export.",
+    metadata: { balanceLabel: "$6.31" },
+    lastCheckedAt: "2026-06-05T11:56:00.000Z",
+    lastRefreshStatus: "ok",
+    lastRefreshError: null,
+    createdAt: "2026-06-05T11:56:00.000Z",
+    updatedAt: "2026-06-05T11:56:00.000Z",
+  },
+  {
+    id: "demo-openai",
+    label: "OpenAI admin",
+    provider: "openai",
+    providerDetection: {
+      provider: "openai",
+      confidence: "high",
+      reason: "OpenAI keys commonly start with sk-proj- or sk-.",
+    },
+    maskedKey: "sk-pro...cret",
+    tags: ["admin", "prod"],
+    comment: "Only use for organization metadata refresh.",
+    metadata: null,
+    lastCheckedAt: "2026-06-05T11:00:00.000Z",
+    lastRefreshStatus: "limited",
+    lastRefreshError: "OpenAI metadata generally requires Admin API access.",
+    createdAt: "2026-06-05T11:00:00.000Z",
+    updatedAt: "2026-06-05T11:00:00.000Z",
+  },
+];
+
 export default function App() {
   const [view, setView] = useState<View>(() => viewFromHash());
   const [records, setRecords] = useState<ApiKeyRecord[]>([]);
   const [selectedTag, setSelectedTag] = useState("prod");
+  const [showDemo, setShowDemo] = useState(() => !hasDismissedShowcase());
   const [showAddKey, setShowAddKey] = useState(false);
   const [form, setForm] = useState<AddKeyForm>(initialForm);
   const [passphrase, setPassphrase] = useState("");
@@ -131,6 +194,7 @@ export default function App() {
       providerOverride,
     });
 
+    dismissShowcase(setShowDemo);
     setRecords((current) => [record, ...current]);
     setForm(initialForm);
     setShowAddKey(false);
@@ -224,6 +288,8 @@ export default function App() {
           onAddClick={() => setShowAddKey(true)}
           onAddKey={handleAddKey}
           onCancelAdd={() => setShowAddKey(false)}
+          showDemo={showDemo && records.length === 0}
+          onClearDemo={() => dismissShowcase(setShowDemo)}
           onRefreshAll={() => void refreshAll(records)}
           onRefreshKey={(record) => void refreshKey(record)}
         />
@@ -254,6 +320,8 @@ function KeysView(props: {
   onAddClick: () => void;
   onAddKey: (event: FormEvent<HTMLFormElement>) => void;
   onCancelAdd: () => void;
+  showDemo: boolean;
+  onClearDemo: () => void;
   onRefreshAll: () => void;
   onRefreshKey: (record: ApiKeyRecord) => void;
 }) {
@@ -342,6 +410,8 @@ function KeysView(props: {
 
       {props.records.length > 0 ? (
         <KeyTable records={props.records} onRefreshKey={props.onRefreshKey} />
+      ) : props.showDemo ? (
+        <DemoShowcase onClear={props.onClearDemo} />
       ) : (
         <section className="empty-state">
           <h2>No keys yet.</h2>
@@ -349,6 +419,24 @@ function KeysView(props: {
         </section>
       )}
     </main>
+  );
+}
+
+function DemoShowcase({ onClear }: { onClear: () => void }) {
+  return (
+    <section className="demo-showcase" aria-label="Demo key showcase">
+      <div className="showcase-heading">
+        <div>
+          <p className="eyebrow">Showcase data</p>
+          <h2>Example metadata layout</h2>
+          <p>Dimmed sample rows show how balances, tags, comments, and metadata checks will look after keys are added.</p>
+        </div>
+        <button type="button" className="link-button" aria-label="Clear showcase data" onClick={onClear}>
+          Clear showcase
+        </button>
+      </div>
+      <KeyTable records={demoRecords} onRefreshKey={() => undefined} demo disableRefresh />
+    </section>
   );
 }
 
@@ -503,10 +591,14 @@ function KeyTable({
   records,
   onRefreshKey,
   compact = false,
+  demo = false,
+  disableRefresh = false,
 }: {
   records: ApiKeyRecord[];
   onRefreshKey: (record: ApiKeyRecord) => void;
   compact?: boolean;
+  demo?: boolean;
+  disableRefresh?: boolean;
 }) {
   return (
     <div className={compact ? "key-table compact" : "key-table"}>
@@ -520,9 +612,12 @@ function KeyTable({
         <span>Check</span>
       </div>
       {records.map((record) => (
-        <div className="key-row" key={record.id}>
+        <div className={demo ? "key-row demo-row" : "key-row"} key={record.id}>
           <span>
-            <strong>{record.label}</strong>
+            <span className="key-title-line">
+              <strong>{record.label}</strong>
+              {demo && <em className="demo-badge">Demo</em>}
+            </span>
             <small>{record.maskedKey}</small>
           </span>
           {!compact && <span>{providerLabels[record.provider]}</span>}
@@ -536,7 +631,12 @@ function KeyTable({
           <span className="comment-cell">{record.comment || "-"}</span>
           <span className="check-cell">
             <small>{formatChecked(record)}</small>
-            <IconButton label={`Refresh ${record.label}`} onClick={() => onRefreshKey(record)} small />
+            <IconButton
+              label={`Refresh ${record.label}`}
+              onClick={() => onRefreshKey(record)}
+              small
+              disabled={disableRefresh}
+            />
           </span>
         </div>
       ))}
@@ -544,7 +644,17 @@ function KeyTable({
   );
 }
 
-function IconButton({ label, onClick, small = false }: { label: string; onClick: () => void; small?: boolean }) {
+function IconButton({
+  label,
+  onClick,
+  small = false,
+  disabled = false,
+}: {
+  label: string;
+  onClick: () => void;
+  small?: boolean;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -552,6 +662,7 @@ function IconButton({ label, onClick, small = false }: { label: string; onClick:
       aria-label={label}
       title={label}
       onClick={onClick}
+      disabled={disabled}
     >
       <RefreshCw size={small ? 15 : 17} aria-hidden="true" />
     </button>
@@ -611,4 +722,21 @@ function viewFromHash(): View {
   }
 
   return "keys";
+}
+
+function hasDismissedShowcase(): boolean {
+  try {
+    return window.localStorage.getItem(SHOWCASE_DISMISSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function dismissShowcase(setShowDemo: (value: boolean) => void) {
+  setShowDemo(false);
+  try {
+    window.localStorage.setItem(SHOWCASE_DISMISSED_KEY, "true");
+  } catch {
+    // The showcase is only a UI preference; storage failures should not block key entry.
+  }
 }

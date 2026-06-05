@@ -5,17 +5,46 @@ import App from "./App";
 
 afterEach(() => {
   window.history.pushState(null, "", "/");
+  window.localStorage.clear();
 });
 
 describe("App", () => {
-  it("starts with an empty vault instead of demo data", () => {
+  it("shows dimmed showcase data before the first real key is added", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "API Key Manager" })).toBeInTheDocument();
-    expect(screen.getByText("No keys yet.")).toBeInTheDocument();
     expect(screen.getByText("Create a passphrase to save an encrypted vault in this browser.")).toBeInTheDocument();
-    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
+    const showcase = screen.getByRole("region", { name: "Demo key showcase" });
+    expect(within(showcase).getByText("Showcase data")).toBeInTheDocument();
+    expect(within(showcase).getByText("OpenRouter production")).toBeInTheDocument();
+    expect(within(showcase).getAllByText("Demo").length).toBeGreaterThan(0);
+    expect(within(showcase).getByRole("button", { name: "Refresh OpenRouter production" })).toBeDisabled();
+    expect(within(showcase).getByRole("button", { name: "Clear showcase data" })).toBeInTheDocument();
+    expect(screen.queryByText("No keys yet.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh metadata" })).toBeInTheDocument();
+  });
+
+  it("lets the user clear the showcase data", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Clear showcase data" }));
+
+    expect(screen.queryByRole("region", { name: "Demo key showcase" })).not.toBeInTheDocument();
+    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
+    expect(screen.getByText("No keys yet.")).toBeInTheDocument();
+  });
+
+  it("keeps the showcase hidden after the user clears it", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Clear showcase data" }));
+    unmount();
+    render(<App />);
+
+    expect(screen.queryByRole("region", { name: "Demo key showcase" })).not.toBeInTheDocument();
+    expect(screen.getByText("No keys yet.")).toBeInTheDocument();
   });
 
   it("groups keys on the Tags page and keeps comments visible", async () => {
@@ -122,6 +151,8 @@ describe("App", () => {
 
     expect(screen.getByText("New router key")).toBeInTheDocument();
     expect(screen.getByText("Used for smoke tests")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Demo key showcase" })).not.toBeInTheDocument();
+    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
   });
 });
 
