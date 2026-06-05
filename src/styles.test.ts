@@ -8,6 +8,12 @@ describe("responsive table density", () => {
     expect(styles).toContain(".key-table:not(.compact) .key-row");
     expect(styles).toContain("@media (max-width: 640px)");
   });
+
+  it("keeps the main key table row-like at tablet widths", () => {
+    expect(styles).toContain("grid-template-columns: minmax(112px, 1.15fr) 70px 58px 78px 90px minmax(116px, 1fr) 36px;");
+    expect(styles).toContain(".key-table:not(.compact) .check-cell small");
+    expect(styles).not.toContain(".key-table:not(.compact) .key-row {\n    grid-template-columns: 1fr;");
+  });
 });
 
 describe("tag chip density", () => {
