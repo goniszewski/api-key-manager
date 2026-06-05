@@ -283,8 +283,41 @@ h1 {
   font-size: 13px;
 }
 
+.key-row > span {
+  min-width: 0;
+}
+
 .key-table.compact .key-row {
-  grid-template-columns: 1fr .65fr .75fr .85fr 1fr .66fr;
+  grid-template-columns: minmax(120px, 1.35fr) 64px 76px 100px minmax(150px, 1.45fr) 34px;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.key-table.compact .key-row.header {
+  min-height: 34px;
+}
+
+.key-table.compact .key-row strong,
+.key-table.compact .key-row small,
+.key-table.compact .comment-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.key-table.compact .tag-list {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.key-table.compact .check-cell {
+  justify-content: center;
+}
+
+.key-table.compact .check-cell small {
+  display: none;
 }
 
 .key-row:first-child {
@@ -526,6 +559,17 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .key-table:not(.compact) .key-row {
+    grid-template-columns: 1fr;
+  }
+
+  .key-table:not(.compact) .key-row.header {
+    display: none;
+  }
+
+}
+
+@media (max-width: 640px) {
   .key-row,
   .key-table.compact .key-row {
     grid-template-columns: 1fr;
@@ -535,4 +579,9 @@ h1 {
     display: none;
   }
 
+  .key-table.compact .comment-cell,
+  .key-table.compact .key-row strong,
+  .key-table.compact .key-row small {
+    white-space: normal;
+  }
 }
