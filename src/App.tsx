@@ -474,26 +474,48 @@ function ProvidersView({ records }: { records: ApiKeyRecord[] }) {
 }
 
 function AboutView() {
+  const rows = [
+    {
+      area: "Runtime",
+      detail:
+        "API Key Manager runs entirely in your browser as a static GitHub Pages app. It has no application backend and no hosted account system.",
+    },
+    {
+      area: "Key storage",
+      detail:
+        "Keys are encrypted before local persistence with WebCrypto. localStorage is not used for plaintext keys, but browser-based storage still depends on your device, browser profile, and passphrase hygiene.",
+    },
+    {
+      area: "Metadata refresh",
+      detail:
+        "Metadata refresh sends the selected key from your browser to the provider API. Some providers block browser metadata calls with CORS, and some useful metadata requires admin APIs, OAuth, organization permissions, or dashboard exports.",
+    },
+    {
+      area: "Key hygiene",
+      detail:
+        "Restrict keys at the provider where possible, rotate them regularly, and revoke keys in the provider dashboard when they are no longer needed.",
+    },
+  ];
+
   return (
     <main className="panel about-page">
       <h2>About this vault</h2>
-      <p>
-        API Key Manager runs entirely in your browser as a static GitHub Pages app. It has no application backend and no
-        hosted account system.
-      </p>
-      <p>
-        Keys are encrypted before local persistence with WebCrypto. localStorage is not used for plaintext keys, but
-        browser-based storage still depends on your device, browser profile, and passphrase hygiene.
-      </p>
-      <p>
-        Metadata refresh sends the selected key from your browser to the provider API. Some providers block browser
-        metadata calls with CORS, and some useful metadata requires admin APIs, OAuth, organization permissions, or
-        dashboard exports.
-      </p>
-      <p>
-        Restrict keys at the provider where possible, rotate them regularly, and revoke keys in the provider dashboard
-        when they are no longer needed.
-      </p>
+      <table className="about-table" aria-label="Vault limitations and responsibilities">
+        <thead>
+          <tr>
+            <th scope="col">Area</th>
+            <th scope="col">What to know</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.area}>
+              <th scope="row">{row.area}</th>
+              <td>{row.detail}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </main>
   );
 }

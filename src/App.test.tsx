@@ -52,6 +52,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "About" }));
 
+    expect(screen.getByRole("table", { name: "Vault limitations and responsibilities" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Area" })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "Metadata refresh" })).toBeInTheDocument();
     expect(screen.getByText(/runs entirely in your browser/i)).toBeInTheDocument();
     expect(screen.getByText(/Some providers block browser metadata calls/i)).toBeInTheDocument();
     expect(screen.getByText(/localStorage is not used for plaintext keys/i)).toBeInTheDocument();
