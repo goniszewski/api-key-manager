@@ -101,6 +101,15 @@ const providerLabels: Record<ProviderId, string> = {
   unknown: "Unknown",
 };
 
+const providerDomains: Record<ProviderId, string> = {
+  openai: "openai.com",
+  anthropic: "anthropic.com",
+  deepseek: "deepseek.com",
+  gemini: "gemini.google.com",
+  openrouter: "openrouter.ai",
+  unknown: "",
+};
+
 export default function App() {
   const [view, setView] = useState<View>(() => viewFromHash());
   const [records, setRecords] = useState<ApiKeyRecord[]>(seedRecords);
@@ -459,13 +468,36 @@ function ProvidersView({ records }: { records: ApiKeyRecord[] }) {
   return (
     <main className="panel provider-grid">
       {providers.map(([provider, label]) => {
-        const providerRecords = records.filter((record) => record.provider === provider);
+        const providerId = provider as ProviderId;
+        const providerRecords = records.filter((record) => record.provider === providerId);
+        const balance = knownBalance(providerRecords);
+
         return (
-          <section className="provider-card" key={provider}>
-            <h2>{label}</h2>
-            <p>{providerRecords.length} saved keys</p>
-            <strong>{knownBalance(providerRecords)}</strong>
-            <span>{providerSupportCopy(provider as ProviderId)}</span>
+          <section className="provider-card" aria-label={`${label} provider summary`} key={provider}>
+            <div className="provider-card-header">
+              <span className="provider-icon">
+                <span aria-hidden="true" className="provider-icon-fallback">
+                  {label.slice(0, 1)}
+                </span>
+                <img
+                  alt={`${label} favicon`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  src={providerFaviconUrl(providerId)}
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+              </span>
+              <div>
+                <h2>{label}</h2>
+                <span className="provider-count">{keyCountLabel(providerRecords.length)}</span>
+              </div>
+            </div>
+            <div className="provider-card-body">
+              <strong className={balance === "Manual" ? "provider-signal manual" : "provider-signal known"}>{balance}</strong>
+              <span className="provider-copy">{providerSupportCopy(providerId)}</span>
+            </div>
           </section>
         );
       })}
@@ -591,6 +623,14 @@ function Metric({ value, label }: { value: string; label: string }) {
 function knownBalance(records: ApiKeyRecord[]): string {
   const first = records.find((record) => record.metadata?.balanceLabel);
   return first?.metadata?.balanceLabel ?? "Manual";
+}
+
+function keyCountLabel(count: number): string {
+  return `${count} ${count === 1 ? "key" : "keys"}`;
+}
+
+function providerFaviconUrl(provider: ProviderId): string {
+  return `https://www.google.com/s2/favicons?domain=${providerDomains[provider]}&sz=64`;
 }
 
 function providerSupportCopy(provider: ProviderId): string {

@@ -46,6 +46,29 @@ describe("App", () => {
     expect(screen.getByRole("region", { name: "Tag prod" })).toBeInTheDocument();
   });
 
+  it("renders provider cards with favicons and compact metadata", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Providers" }));
+
+    const openAi = screen.getByRole("region", { name: "OpenAI provider summary" });
+    expect(within(openAi).getByRole("img", { name: "OpenAI favicon" })).toHaveAttribute(
+      "src",
+      expect.stringContaining("domain=openai.com"),
+    );
+    expect(within(openAi).getByText("1 key")).toBeInTheDocument();
+    expect(within(openAi).getByText("Manual")).toHaveClass("provider-signal");
+    expect(within(openAi).getByText("Richer metadata generally requires Admin API.")).toBeInTheDocument();
+
+    const openRouter = screen.getByRole("region", { name: "OpenRouter provider summary" });
+    expect(within(openRouter).getByRole("img", { name: "OpenRouter favicon" })).toHaveAttribute(
+      "src",
+      expect.stringContaining("domain=openrouter.ai"),
+    );
+    expect(within(openRouter).getByText("$48.20 left")).toHaveClass("provider-signal");
+  });
+
   it("documents client-only and provider limitations on About", async () => {
     const user = userEvent.setup();
     render(<App />);

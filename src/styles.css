@@ -485,7 +485,7 @@ h1 {
 }
 
 .provider-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .summary-strip {
@@ -510,14 +510,93 @@ h1 {
 }
 
 .provider-card {
+  min-height: 96px;
+  display: grid;
+  gap: 10px;
   border: 1px solid #dbe1ea;
   border-radius: 7px;
-  padding: 12px;
+  padding: 10px 12px;
   background: #fff;
 }
 
-.summary-item strong,
-.provider-card strong {
+.provider-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.provider-icon {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe1ea;
+  border-radius: 8px;
+  background: #f7f9fc;
+  overflow: hidden;
+}
+
+.provider-icon img {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.provider-icon-fallback {
+  position: absolute;
+  color: #53606f;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.provider-card-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.provider-signal {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #125ec4;
+  background: #eaf2ff;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.provider-signal.manual {
+  color: #7a4f05;
+  background: #fff5e8;
+}
+
+.provider-signal.known {
+  color: #0f5f45;
+  background: #edf7f3;
+}
+
+.provider-count,
+.provider-copy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.provider-copy {
+  min-width: 0;
+}
+
+.summary-item strong {
   display: block;
   font-size: 14px;
 }
@@ -532,8 +611,7 @@ h1 {
   font-size: 12px;
 }
 
-.provider-card span,
-.provider-card p {
+.provider-card span {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.4;
@@ -544,8 +622,9 @@ h1 {
 }
 
 .provider-card h2 {
-  margin-bottom: 5px;
-  font-size: 17px;
+  margin-bottom: 3px;
+  font-size: 16px;
+  line-height: 1.15;
 }
 
 .about-page {
@@ -610,8 +689,7 @@ h1 {
     flex-direction: column;
   }
 
-  .form-grid,
-  .provider-grid {
+  .form-grid {
     grid-template-columns: 1fr;
   }
 
