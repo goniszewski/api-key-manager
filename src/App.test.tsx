@@ -30,6 +30,8 @@ describe("App", () => {
     expect(within(tagFilters).getByRole("button", { name: "routing 1 key" })).toBeInTheDocument();
 
     const tagPanel = screen.getByRole("region", { name: "Tag prod" });
+    const tagSummary = within(tagPanel).getByRole("region", { name: "Tag summary" });
+    expect(tagSummary).toHaveClass("summary-strip");
     expect(within(tagPanel).getByText("2 keys")).toBeInTheDocument();
     expect(within(tagPanel).getByText("Only use for organization metadata refresh.")).toBeInTheDocument();
     expect(within(tagPanel).getByRole("button", { name: "Refresh tag metadata" })).toBeInTheDocument();

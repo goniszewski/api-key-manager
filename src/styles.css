@@ -440,14 +440,34 @@ h1 {
   line-height: 1.45;
 }
 
-.metric-grid,
 .provider-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.metric-card,
+.provider-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.summary-item {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #dbe1ea;
+  border-radius: 999px;
+  padding: 6px 10px 6px 12px;
+  background: #fff;
+}
+
 .provider-card {
   border: 1px solid #dbe1ea;
   border-radius: 7px;
@@ -455,13 +475,13 @@ h1 {
   background: #fff;
 }
 
-.metric-card strong,
+.summary-item strong,
 .provider-card strong {
   display: block;
-  font-size: 18px;
+  font-size: 14px;
 }
 
-.metric-card span,
+.summary-item span,
 .provider-card span,
 .provider-card p {
   color: var(--muted);
@@ -502,7 +522,6 @@ h1 {
   }
 
   .form-grid,
-  .metric-grid,
   .provider-grid {
     grid-template-columns: 1fr;
   }

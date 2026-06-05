@@ -442,11 +442,11 @@ function TagsView(props: {
             </button>
           </div>
         </div>
-        <div className="metric-grid">
+        <section className="summary-strip" aria-label="Tag summary">
           <Metric value={`${props.activeTag.count} keys`} label="Tagged keys" />
           <Metric value={`${props.activeTag.keys.filter((key) => key.lastRefreshStatus !== "ok").length} warnings`} label="Needs attention" />
           <Metric value={knownBalance(props.activeTag.keys)} label="Known balance" />
-        </div>
+        </section>
         <KeyTable records={props.activeTag.keys} onRefreshKey={props.onRefreshKey} compact />
       </section>
     </main>
@@ -559,7 +559,7 @@ function IconButton({ label, onClick, small = false }: { label: string; onClick:
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="metric-card">
+    <div className="summary-item">
       <strong>{value}</strong>
       <span>{label}</span>
     </div>
