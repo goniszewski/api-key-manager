@@ -10,7 +10,7 @@ describe("responsive table density", () => {
   });
 
   it("keeps the main key table row-like at tablet widths", () => {
-    expect(styles).toContain("grid-template-columns: minmax(112px, 1.15fr) 70px 58px 78px 90px minmax(116px, 1fr) 36px;");
+    expect(styles).toContain("grid-template-columns: minmax(112px, 1.1fr) 68px 58px 70px 82px minmax(110px, .95fr) 100px;");
     expect(styles).toContain(".key-table:not(.compact) .check-cell small");
     expect(styles).not.toContain(".key-table:not(.compact) .key-row {\n    grid-template-columns: 1fr;");
   });

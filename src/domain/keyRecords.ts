@@ -40,6 +40,30 @@ export function createKeyRecord(input: CreateKeyRecordInput): ApiKeyRecord {
   };
 }
 
+export function updateKeyRecord(record: ApiKeyRecord, input: CreateKeyRecordInput): ApiKeyRecord {
+  const now = input.now ?? new Date().toISOString();
+  const key = input.key.trim();
+  const detection = detectProvider(key);
+  const provider = input.providerOverride ?? detection.provider;
+  const changedKeyMaterial = key !== (record.keyValue ?? "") || provider !== record.provider;
+
+  return {
+    ...record,
+    label: input.label.trim() || maskKey(key),
+    provider,
+    providerDetection: detection,
+    maskedKey: maskKey(key),
+    keyValue: key,
+    tags: normalizeTags(input.tags),
+    comment: input.comment.trim(),
+    metadata: changedKeyMaterial ? null : record.metadata,
+    lastCheckedAt: changedKeyMaterial ? null : record.lastCheckedAt,
+    lastRefreshStatus: changedKeyMaterial ? "never" : record.lastRefreshStatus,
+    lastRefreshError: changedKeyMaterial ? null : record.lastRefreshError,
+    updatedAt: now,
+  };
+}
+
 export function mergeMetadataResult(record: ApiKeyRecord, result: MetadataRefreshResult): ApiKeyRecord {
   return {
     ...record,
@@ -50,4 +74,3 @@ export function mergeMetadataResult(record: ApiKeyRecord, result: MetadataRefres
     updatedAt: result.checkedAt,
   };
 }
-

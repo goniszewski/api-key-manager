@@ -1,11 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 afterEach(() => {
   window.history.pushState(null, "", "/");
   window.localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("App", () => {
@@ -153,6 +154,60 @@ describe("App", () => {
     expect(screen.getByText("Used for smoke tests")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Demo key showcase" })).not.toBeInTheDocument();
     expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
+  });
+
+  it("asks for provider confirmation when an OpenAI-compatible key shape is ambiguous", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Add key" }));
+    await user.type(screen.getByLabelText("Label"), "DeepSeek batch");
+    await user.type(screen.getByLabelText("API key"), "sk-deepseek-compatible-secret");
+
+    expect(screen.getByText("OpenAI-style key detected")).toBeInTheDocument();
+    expect(screen.getByText(/DeepSeek and other OpenAI-compatible platforms can use the same key shape/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "DeepSeek" }));
+    await user.type(screen.getByLabelText("Tags"), "Batch");
+    await user.type(screen.getByLabelText("Comment"), "Confirmed provider during add.");
+    await user.click(screen.getByRole("button", { name: "Save encrypted" }));
+
+    expect(screen.getByText("DeepSeek batch")).toBeInTheDocument();
+    expect(screen.getByText("DeepSeek")).toBeInTheDocument();
+    expect(screen.getByText("Confirmed provider during add.")).toBeInTheDocument();
+  });
+
+  it("lets the user edit and delete a saved key", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<App />);
+
+    await addKey(user, {
+      label: "OpenRouter production",
+      key: "sk-or-v1-test-openrouter-secret",
+      tags: "Prod",
+      comment: "Original comment.",
+    });
+
+    await user.click(screen.getByRole("button", { name: "Edit OpenRouter production" }));
+    await user.clear(screen.getByLabelText("Label"));
+    await user.type(screen.getByLabelText("Label"), "DeepSeek batch");
+    await user.clear(screen.getByLabelText("API key"));
+    await user.type(screen.getByLabelText("API key"), "sk-deepseek-compatible-secret");
+    await user.click(screen.getByRole("button", { name: "DeepSeek" }));
+    await user.clear(screen.getByLabelText("Comment"));
+    await user.type(screen.getByLabelText("Comment"), "Updated during edit.");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(screen.getByText("DeepSeek batch")).toBeInTheDocument();
+    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
+    expect(screen.getByText("Updated during edit.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Delete DeepSeek batch" }));
+
+    expect(confirm).toHaveBeenCalledWith('Delete "DeepSeek batch" from this vault?');
+    expect(screen.queryByText("DeepSeek batch")).not.toBeInTheDocument();
+    expect(screen.getByText("No keys yet.")).toBeInTheDocument();
   });
 });
 

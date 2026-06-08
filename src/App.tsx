@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { KeyRound, Lock, Plus, RefreshCw, ShieldCheck, Tag, Unlock } from "lucide-react";
+import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { KeyRound, Lock, Pencil, Plus, RefreshCw, ShieldCheck, Tag, Trash2, Unlock } from "lucide-react";
 import { detectProvider } from "./domain/providerDetection";
-import { createKeyRecord, mergeMetadataResult } from "./domain/keyRecords";
+import { createKeyRecord, mergeMetadataResult, updateKeyRecord } from "./domain/keyRecords";
 import { groupKeysByTag, normalizeTags, renameTag } from "./domain/tags";
 import type { ApiKeyRecord, ProviderId } from "./domain/types";
 import { refreshProviderMetadata } from "./providers";
@@ -118,6 +118,7 @@ export default function App() {
   const [selectedTag, setSelectedTag] = useState("prod");
   const [showDemo, setShowDemo] = useState(() => !hasDismissedShowcase());
   const [showAddKey, setShowAddKey] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [form, setForm] = useState<AddKeyForm>(initialForm);
   const [passphrase, setPassphrase] = useState("");
   const [vaultEnvelope, setVaultEnvelope] = useState<VaultEnvelope | null>(null);
@@ -183,22 +184,70 @@ export default function App() {
     setVaultMessage("Vault locked. Decrypted keys were cleared from memory.");
   }
 
-  function handleAddKey(event: FormEvent<HTMLFormElement>) {
+  function resetKeyForm() {
+    setForm(initialForm);
+    setShowAddKey(false);
+    setEditingRecordId(null);
+  }
+
+  function handleStartAddKey() {
+    setForm(initialForm);
+    setEditingRecordId(null);
+    setShowAddKey(true);
+  }
+
+  function handleStartEditKey(record: ApiKeyRecord) {
+    setForm({
+      label: record.label,
+      key: record.keyValue ?? "",
+      provider: record.provider,
+      tags: record.tags.join(", "),
+      comment: record.comment,
+    });
+    setEditingRecordId(record.id);
+    setShowAddKey(true);
+    navigate("keys");
+  }
+
+  function handleConfirmProvider(provider: ProviderId) {
+    setForm((current) => ({ ...current, provider }));
+  }
+
+  function handleSubmitKey(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const providerOverride = form.provider === "auto" ? undefined : form.provider;
-    const record = createKeyRecord({
+    const input = {
       label: form.label,
       key: form.key,
       tags: form.tags.split(","),
       comment: form.comment,
       providerOverride,
-    });
+    };
 
-    dismissShowcase(setShowDemo);
-    setRecords((current) => [record, ...current]);
-    setForm(initialForm);
-    setShowAddKey(false);
+    if (editingRecordId) {
+      setRecords((current) =>
+        current.map((record) => (record.id === editingRecordId ? updateKeyRecord(record, input) : record)),
+      );
+      setVaultMessage("Key updated in memory. Save vault to persist this change.");
+    } else {
+      const record = createKeyRecord(input);
+      dismissShowcase(setShowDemo);
+      setRecords((current) => [record, ...current]);
+      setVaultMessage("Key added in memory. Save vault to persist this change.");
+    }
+
+    resetKeyForm();
     navigate("keys");
+  }
+
+  function handleDeleteKey(record: ApiKeyRecord) {
+    if (!window.confirm(`Delete "${record.label}" from this vault?`)) return;
+
+    setRecords((current) => current.filter((item) => item.id !== record.id));
+    if (editingRecordId === record.id) {
+      resetKeyForm();
+    }
+    setVaultMessage("Key deleted in memory. Save vault to persist this change.");
   }
 
   async function refreshKey(record: ApiKeyRecord) {
@@ -285,13 +334,17 @@ export default function App() {
           form={form}
           detection={detection}
           setForm={setForm}
-          onAddClick={() => setShowAddKey(true)}
-          onAddKey={handleAddKey}
-          onCancelAdd={() => setShowAddKey(false)}
+          isEditing={Boolean(editingRecordId)}
+          onAddClick={handleStartAddKey}
+          onSubmitKey={handleSubmitKey}
+          onCancelForm={resetKeyForm}
+          onConfirmProvider={handleConfirmProvider}
           showDemo={showDemo && records.length === 0}
           onClearDemo={() => dismissShowcase(setShowDemo)}
           onRefreshAll={() => void refreshAll(records)}
           onRefreshKey={(record) => void refreshKey(record)}
+          onEditKey={handleStartEditKey}
+          onDeleteKey={handleDeleteKey}
         />
       )}
       {view === "tags" && (
@@ -302,6 +355,8 @@ export default function App() {
           onSelectTag={setSelectedTag}
           onRefreshTag={(keys) => void refreshAll(keys)}
           onRefreshKey={(record) => void refreshKey(record)}
+          onEditKey={handleStartEditKey}
+          onDeleteKey={handleDeleteKey}
           onRenameTag={handleRenameActiveTag}
         />
       )}
@@ -317,13 +372,17 @@ function KeysView(props: {
   form: AddKeyForm;
   detection: ReturnType<typeof detectProvider>;
   setForm: (updater: AddKeyForm | ((current: AddKeyForm) => AddKeyForm)) => void;
+  isEditing: boolean;
   onAddClick: () => void;
-  onAddKey: (event: FormEvent<HTMLFormElement>) => void;
-  onCancelAdd: () => void;
+  onSubmitKey: (event: FormEvent<HTMLFormElement>) => void;
+  onCancelForm: () => void;
+  onConfirmProvider: (provider: ProviderId) => void;
   showDemo: boolean;
   onClearDemo: () => void;
   onRefreshAll: () => void;
   onRefreshKey: (record: ApiKeyRecord) => void;
+  onEditKey: (record: ApiKeyRecord) => void;
+  onDeleteKey: (record: ApiKeyRecord) => void;
 }) {
   return (
     <main className="panel">
@@ -339,7 +398,7 @@ function KeysView(props: {
       </div>
 
       {props.showAddKey && (
-        <form className="add-key-form" onSubmit={props.onAddKey}>
+        <form className="add-key-form" onSubmit={props.onSubmitKey}>
           <div className="form-grid">
             <label>
               <span>Label</span>
@@ -354,7 +413,7 @@ function KeysView(props: {
               <input
                 aria-label="API key"
                 value={props.form.key}
-                onChange={(event) => props.setForm((current) => ({ ...current, key: event.target.value }))}
+                onChange={(event) => props.setForm((current) => ({ ...current, key: event.target.value, provider: "auto" }))}
               />
             </label>
             <label>
@@ -391,17 +450,16 @@ function KeysView(props: {
               />
             </label>
           </div>
-          <div className="detection-card">
-            <KeyRound size={18} aria-hidden="true" />
-            <strong>{providerLabels[props.detection.provider]} detected</strong>
-            <span>{props.detection.confidence} confidence</span>
-            <p>{props.detection.reason}</p>
-          </div>
+          <ProviderConfirmation
+            detection={props.detection}
+            form={props.form}
+            onConfirmProvider={props.onConfirmProvider}
+          />
           <div className="form-actions">
             <button type="submit" className="primary">
-              Save encrypted
+              {props.isEditing ? "Save changes" : "Save encrypted"}
             </button>
-            <button type="button" className="secondary" onClick={props.onCancelAdd}>
+            <button type="button" className="secondary" onClick={props.onCancelForm}>
               Cancel
             </button>
           </div>
@@ -409,7 +467,12 @@ function KeysView(props: {
       )}
 
       {props.records.length > 0 ? (
-        <KeyTable records={props.records} onRefreshKey={props.onRefreshKey} />
+        <KeyTable
+          records={props.records}
+          onRefreshKey={props.onRefreshKey}
+          onEditKey={props.onEditKey}
+          onDeleteKey={props.onDeleteKey}
+        />
       ) : props.showDemo ? (
         <DemoShowcase onClear={props.onClearDemo} />
       ) : (
@@ -447,6 +510,8 @@ function TagsView(props: {
   onSelectTag: (tag: string) => void;
   onRefreshTag: (keys: ApiKeyRecord[]) => void;
   onRefreshKey: (record: ApiKeyRecord) => void;
+  onEditKey: (record: ApiKeyRecord) => void;
+  onDeleteKey: (record: ApiKeyRecord) => void;
   onRenameTag: () => void;
 }) {
   if (!props.activeTag) {
@@ -491,9 +556,61 @@ function TagsView(props: {
           <Metric value={`${props.activeTag.keys.filter((key) => key.lastRefreshStatus !== "ok").length} warnings`} label="Needs attention" />
           <Metric value={knownBalance(props.activeTag.keys)} label="Known balance" />
         </section>
-        <KeyTable records={props.activeTag.keys} onRefreshKey={props.onRefreshKey} compact />
+        <KeyTable
+          records={props.activeTag.keys}
+          onRefreshKey={props.onRefreshKey}
+          onEditKey={props.onEditKey}
+          onDeleteKey={props.onDeleteKey}
+          compact
+        />
       </section>
     </main>
+  );
+}
+
+function ProviderConfirmation({
+  detection,
+  form,
+  onConfirmProvider,
+}: {
+  detection: ReturnType<typeof detectProvider>;
+  form: AddKeyForm;
+  onConfirmProvider: (provider: ProviderId) => void;
+}) {
+  const isAmbiguousOpenAiShape = form.key.trim() !== "" && form.provider === "auto" && detection.confidence === "medium";
+  const selectedProvider = form.provider === "auto" ? detection.provider : form.provider;
+  const title = isAmbiguousOpenAiShape
+    ? "OpenAI-style key detected"
+    : form.provider === "auto"
+      ? `${providerLabels[detection.provider]} detected`
+      : `${providerLabels[form.provider]} selected`;
+  const detail = isAmbiguousOpenAiShape
+    ? "DeepSeek and other OpenAI-compatible platforms can use the same key shape. Confirm which provider this key belongs to."
+    : detection.reason;
+
+  return (
+    <div className="detection-card">
+      <KeyRound size={18} aria-hidden="true" />
+      <strong>{title}</strong>
+      <span>
+        {form.provider === "auto" ? detection.confidence : "confirmed"} confidence
+      </span>
+      <p>{detail}</p>
+      {isAmbiguousOpenAiShape && (
+        <div className="provider-confirmation" aria-label="Confirm provider">
+          {(["openai", "deepseek", "unknown"] as ProviderId[]).map((provider) => (
+            <button
+              key={provider}
+              type="button"
+              className={selectedProvider === provider ? "active" : ""}
+              onClick={() => onConfirmProvider(provider)}
+            >
+              {provider === "unknown" ? "Unknown/custom" : providerLabels[provider]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -590,12 +707,16 @@ function AboutView() {
 function KeyTable({
   records,
   onRefreshKey,
+  onEditKey,
+  onDeleteKey,
   compact = false,
   demo = false,
   disableRefresh = false,
 }: {
   records: ApiKeyRecord[];
   onRefreshKey: (record: ApiKeyRecord) => void;
+  onEditKey?: (record: ApiKeyRecord) => void;
+  onDeleteKey?: (record: ApiKeyRecord) => void;
   compact?: boolean;
   demo?: boolean;
   disableRefresh?: boolean;
@@ -609,7 +730,7 @@ function KeyTable({
         <span>Balance</span>
         <span>Tags</span>
         <span>Comment</span>
-        <span>Check</span>
+        <span>Actions</span>
       </div>
       {records.map((record) => (
         <div className={demo ? "key-row demo-row" : "key-row"} key={record.id}>
@@ -631,16 +752,52 @@ function KeyTable({
           <span className="comment-cell">{record.comment || "-"}</span>
           <span className="check-cell">
             <small>{formatChecked(record)}</small>
-            <IconButton
-              label={`Refresh ${record.label}`}
-              onClick={() => onRefreshKey(record)}
-              small
-              disabled={disableRefresh}
-            />
+            <span className="row-actions">
+              <IconButton
+                label={`Refresh ${record.label}`}
+                onClick={() => onRefreshKey(record)}
+                small
+                disabled={disableRefresh}
+              />
+              {!demo && onEditKey && (
+                <ActionButton label={`Edit ${record.label}`} onClick={() => onEditKey(record)}>
+                  <Pencil size={14} aria-hidden="true" />
+                </ActionButton>
+              )}
+              {!demo && onDeleteKey && (
+                <ActionButton label={`Delete ${record.label}`} onClick={() => onDeleteKey(record)} danger>
+                  <Trash2 size={14} aria-hidden="true" />
+                </ActionButton>
+              )}
+            </span>
           </span>
         </div>
       ))}
     </div>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  children,
+  danger = false,
+}: {
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={danger ? "icon-button small danger" : "icon-button small"}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 
