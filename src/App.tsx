@@ -181,6 +181,7 @@ export default function App() {
   function handleLockVault() {
     setRecords([]);
     setPassphrase("");
+    resetKeyForm();
     setVaultMessage("Vault locked. Decrypted keys were cleared from memory.");
   }
 

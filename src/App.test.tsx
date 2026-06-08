@@ -209,6 +209,28 @@ describe("App", () => {
     expect(screen.queryByText("DeepSeek batch")).not.toBeInTheDocument();
     expect(screen.getByText("No keys yet.")).toBeInTheDocument();
   });
+
+  it("clears plaintext records and an open edit form when the vault locks", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Vault passphrase"), "correct horse battery staple");
+    await addKey(user, {
+      label: "OpenRouter production",
+      key: "sk-or-v1-test-openrouter-secret",
+      tags: "Prod",
+      comment: "Original comment.",
+    });
+    await user.click(screen.getByRole("button", { name: "Edit OpenRouter production" }));
+
+    expect(screen.getByLabelText("API key")).toHaveValue("sk-or-v1-test-openrouter-secret");
+
+    await user.click(screen.getByRole("button", { name: "Lock vault" }));
+
+    expect(screen.getByLabelText("Vault passphrase")).toHaveValue("");
+    expect(screen.queryByText("OpenRouter production")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("API key")).not.toBeInTheDocument();
+  });
 });
 
 async function addKey(
